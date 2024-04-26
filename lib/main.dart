@@ -1,8 +1,35 @@
 import 'package:flutter/material.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(
+    const ProviderScope(
+      child: MyApp(),
+    ),
+  );
 }
+
+extension OptionalInfixAddition<T extends num> on T? {
+  T? operator +(T? other) {
+    final shadow = this;
+    if (shadow != null) {
+      return shadow + (other ?? 0) as T;
+    }
+    return null;
+  }
+}
+
+class Counter extends StateNotifier<int?> {
+  Counter() : super(null);
+
+  void increment() => state = state == null ? 1 : state + 1;
+
+  void reset() => state = null;
+}
+
+final counterProvider = StateNotifierProvider<Counter, int?>(
+  (ref) => Counter(),
+);
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -12,57 +39,49 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Flutter Demo',
+      darkTheme: ThemeData.dark(),
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      themeMode: ThemeMode.dark,
+      home: const HomePage(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-  final String title;
+class HomePage extends ConsumerWidget {
+  const HomePage({super.key});
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
+        centerTitle: true,
+        title: Consumer(
+          builder: (context, ref, child) {
+            final count = ref.watch(counterProvider);
+            final text = count == null ? 'Press the button' : count.toString();
+            return Text(text);
+          },
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          TextButton(
+            onPressed: ref.read(counterProvider.notifier).increment,
+            child: const Text(
+              'Increment Button',
+            ),
+          ),
+          TextButton(
+            onPressed: ref.read(counterProvider.notifier).reset,
+            child: const Text(
+              'Reset Counter',
+            ),
+          ),
+        ],
       ),
     );
   }
