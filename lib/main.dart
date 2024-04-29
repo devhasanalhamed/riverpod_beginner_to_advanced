@@ -188,9 +188,28 @@ class HomePage extends ConsumerWidget {
         title: const Text('HomePage'),
         centerTitle: true,
       ),
-      body: const Column(
+      body: Column(
         children: [
-          FilterWidget(),
+          const FilterWidget(),
+          Consumer(
+            builder: (context, ref, child) {
+              final filter = ref.watch(favoriteStatusProvider);
+              switch (filter) {
+                case FavoriteStatus.all:
+                  return FilmsWidget(
+                    provider: allFilmsProvider,
+                  );
+                case FavoriteStatus.favorite:
+                  return FilmsWidget(
+                    provider: favoriteFilmsProvider,
+                  );
+                case FavoriteStatus.notFavorite:
+                  return FilmsWidget(
+                    provider: notFavoriteFilmsProvider,
+                  );
+              }
+            },
+          ),
         ],
       ),
     );
