@@ -27,15 +27,42 @@ class App extends StatelessWidget {
   }
 }
 
-class HomePage extends ConsumerWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  HomePageState createState() => HomePageState();
+}
+
+class HomePageState extends State<HomePage> {
+  final int seconds = 12000;
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('HomePage'),
-        centerTitle: true,
+        title: const Text('Home Page'),
+      ),
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                '${seconds / 60}:',
+                style: Theme.of(context).textTheme.headlineLarge,
+              ),
+              Text(
+                '${seconds / 60}:',
+                style: Theme.of(context).textTheme.headlineLarge,
+              ),
+              Text(
+                '${seconds / 60}',
+                style: Theme.of(context).textTheme.headlineLarge,
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
