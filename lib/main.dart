@@ -157,13 +157,17 @@ Future<Person?> createOrUpdatePersonDialog(
 ]) async {
   String? name = existingPerson?.name;
   int? age = existingPerson?.age;
+
   nameController.text = name ?? '';
   ageController.text = age?.toString() ?? '';
+  bool update = existingPerson != null;
   return showDialog<Person?>(
     context: context,
     builder: (context) {
       return AlertDialog(
-        title: const Text('Create a person'),
+        title: update
+            ? Text('${existingPerson.name}\'s info')
+            : const Text('Create a person'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -214,7 +218,7 @@ Future<Person?> createOrUpdatePersonDialog(
                 Navigator.pop(context);
               }
             },
-            child: const Text('Save'),
+            child: update ? const Text('Update') : const Text('Save'),
           ),
         ],
       );
