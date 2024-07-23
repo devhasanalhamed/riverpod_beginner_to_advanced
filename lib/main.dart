@@ -67,6 +67,7 @@ class HomePage extends ConsumerWidget {
         ),
       ),
       body: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           TextButton(
