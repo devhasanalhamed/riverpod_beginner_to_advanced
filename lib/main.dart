@@ -1,13 +1,16 @@
 import 'dart:collection';
-import 'dart:nativewrappers/_internal/vm/lib/ffi_allocation_patch.dart';
+import 'dart:ui';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
 void main() {
   runApp(
-    const App(),
+    const ProviderScope(
+      child: App(),
+    ),
   );
 }
 
@@ -48,7 +51,7 @@ class Person {
         uuid: uuid,
       );
 
-  String get getName => "$name, ($age years old)";
+  String get displayName => "$name, ($age years old)";
 
   @override
   bool operator ==(covariant Person other) => uuid == other.uuid;
@@ -72,170 +75,6 @@ class DataModel extends ChangeNotifier {
   int get count => _people.length;
 
   // using unmodifiable list view from collections library to reach the people in public
-  UnmodifiableListView<Person> get people => UnmodifiableListView(_people);
-
-  void addPerson(Person person) {
-    _people.add(person);
-    notifyListeners();
-  }
-
-  void removePerson(Person person) {
-    _people.remove(person);
-    notifyListeners();
-  }
-
-  void updatePerson(Person updatedPerson) {
-    final index = _people.indexOf(updatedPerson);
-    final oldPerson = _people[index];
-    if (oldPerson.name != updatedPerson.name ||
-        oldPerson.age != updatedPerson.age) {
-      _people[index] = oldPerson.updated(
-        updatedPerson.name,
-        updatedPerson.age,
-      );
-      notifyListeners();
-    }
-  }
-}
-
-final peopleProvider = ChangeNotifierProvider(
-  (ref) => DataModel(),
-);
-
-class HomePage extends ConsumerWidget {
-  const HomePage({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('HomePage'),
-        centerTitle: true,
-      ),
-    );
-  }
-}
-
-final nameController = TextEditingController();
-final ageController = TextEditingController();
-
-Future<Person?> createOrUpdatePersonDialog(BuildContext context,
-    [Person? existingPerson]) {
-  String? name = existingPerson?.name;
-  int? age = existingPerson?.age;
-
-  nameController.text = name ?? "";
-  ageController.text = age.toString() ?? "";
-
-  return showDialog<Person?>(
-      context: context,
-      builder: (context) => AlertDialog(
-            title: const Text('Create a person'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: nameController,
-                  decoration: InputDecoration(
-                    labelText: "Enter name here...",
-                  ),
-                  onChanged: (value) => name = value,
-                ),
-                TextField(
-                  controller: ageController,
-                  decoration: InputDecoration(
-                    labelText: "Enter age here...",
-                  ),
-                  onChanged: (value) => age = int.tryParse(value),
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text("Cancel"),
-              ),
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(
-                  Person(
-                    name: name!,
-                    age: age!,
-                  ),
-                ),
-                child: const Text("Create"),
-              ),
-            ],
-          ));
-}
-
-/*
-import 'dart:collection';
-
-import 'package:flutter/material.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:uuid/uuid.dart';
-
-void main() {
-  runApp(
-    const ProviderScope(
-      child: App(),
-    ),
-  );
-}
-
-class App extends StatelessWidget {
-  const App({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Application',
-      darkTheme: ThemeData.dark(),
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
-      themeMode: ThemeMode.dark,
-      home: const HomePage(),
-    );
-  }
-}
-
-@immutable
-class Person {
-  final String uuid;
-  final String name;
-  final int age;
-
-  Person({
-    String? uuid,
-    required this.name,
-    required this.age,
-  }) : uuid = uuid ?? const Uuid().v4();
-
-  Person updated([String? name, int? age]) => Person(
-        uuid: uuid,
-        name: name ?? this.name,
-        age: age ?? this.age,
-      );
-
-  String get displayName => '$name ($age years old)';
-
-  @override
-  bool operator ==(covariant Person other) => uuid == other.uuid;
-
-  @override
-  int get hashCode => uuid.hashCode;
-
-  @override
-  String toString() => 'Person(uuid: $uuid, name: $name, age: $age)';
-}
-
-class DateModel extends ChangeNotifier {
-  final List<Person> _people = [];
-
-  int get count => _people.length;
-
   UnmodifiableListView<Person> get people => UnmodifiableListView(_people);
 
   void add(Person person) {
@@ -263,7 +102,7 @@ class DateModel extends ChangeNotifier {
 }
 
 final peopleProvider = ChangeNotifierProvider(
-  (ref) => DateModel(),
+  (ref) => DataModel(),
 );
 
 class HomePage extends ConsumerWidget {
@@ -273,40 +112,56 @@ class HomePage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Home Page'),
+        title: const Text('HomePage'),
         centerTitle: true,
       ),
       body: Consumer(
         builder: (context, ref, child) {
           final dataModel = ref.watch(peopleProvider);
-          return ListView.builder(
-            itemCount: dataModel.count,
-            itemBuilder: (context, index) {
-              final person = dataModel.people[index];
-              return ListTile(
-                title: GestureDetector(
-                  onTap: () async {
-                    final updatedPerson = await createOrUpdatePersonDialog(
-                      context,
-                      person,
+          return Column(
+            children: [
+              if (dataModel.count == 0)
+                const Padding(
+                  padding: EdgeInsets.all(32.0),
+                  child: Text(
+                    "List is empty 🥹",
+                    style: TextStyle(
+                      fontSize: 16.0,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: dataModel.count,
+                  itemBuilder: (context, index) {
+                    final person = dataModel.people[index];
+                    return ListTile(
+                      title: GestureDetector(
+                        onTap: () async {
+                          final updatedPerson =
+                              await createOrUpdatePersonDialog(context, person);
+                          if (updatedPerson != null) {
+                            dataModel.update(updatedPerson);
+                          }
+                        },
+                        child: Text(person.displayName),
+                      ),
+                      trailing: IconButton(
+                        onPressed: () => dataModel.remove(person),
+                        icon: const Icon(
+                          Icons.delete,
+                        ),
+                      ),
                     );
-                    if (updatedPerson != null) {
-                      dataModel.update(updatedPerson);
-                    }
                   },
-                  child: Text(person.displayName),
                 ),
-                trailing: IconButton(
-                  icon: const Icon(Icons.delete),
-                  onPressed: () => dataModel.remove(person),
-                ),
-              );
-            },
+              ),
+            ],
           );
         },
       ),
       floatingActionButton: FloatingActionButton(
-        child: const Icon(Icons.add),
         onPressed: () async {
           final person = await createOrUpdatePersonDialog(context);
           if (person != null) {
@@ -314,6 +169,7 @@ class HomePage extends ConsumerWidget {
             dataModel.add(person);
           }
         },
+        child: const Icon(Icons.add),
       ),
     );
   }
@@ -322,79 +178,78 @@ class HomePage extends ConsumerWidget {
 final nameController = TextEditingController();
 final ageController = TextEditingController();
 
-Future<Person?> createOrUpdatePersonDialog(
-  BuildContext context, [
-  Person? existingPerson,
-]) async {
+Future<Person?> createOrUpdatePersonDialog(BuildContext context,
+    [Person? existingPerson]) {
   String? name = existingPerson?.name;
   int? age = existingPerson?.age;
+  bool isEdit = existingPerson != null;
 
-  nameController.text = name ?? '';
-  ageController.text = age?.toString() ?? '';
-  bool update = existingPerson != null;
+  nameController.text = name ?? "";
+  ageController.text = age?.toString() ?? "";
+
   return showDialog<Person?>(
-    context: context,
-    builder: (context) {
-      return AlertDialog(
-        title: update
-            ? Text('${existingPerson.name}\'s info')
-            : const Text('Create a person'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameController,
-              decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  labelText: 'Enter name here...'),
-              onChanged: (value) => name = value,
-            ),
-            TextField(
-              controller: ageController,
-              decoration: const InputDecoration(
-                  border: OutlineInputBorder(), labelText: 'Enter age here...'),
-              keyboardType: TextInputType.number,
-              onChanged: (value) => age = int.tryParse(value),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              if (name != null && age != null) {
-                if (existingPerson != null) {
-                  // person is existed
-                  final newPerson = existingPerson.updated(
-                    name,
-                    age,
-                  );
-                  Navigator.of(context).pop(
-                    newPerson,
-                  );
-                } else {
-                  // new person
-                  Navigator.of(context).pop(
-                    Person(
-                      name: name!,
-                      age: age!,
+      context: context,
+      builder: (context) => AlertDialog(
+            title: Text(isEdit ? "Update a person" : "Create a person"),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameController,
+                  decoration: InputDecoration(
+                    labelText: "Enter name here",
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(15.0),
                     ),
-                  );
-                }
-              } else {
-                // no name, or age, or both
-                Navigator.pop(context);
-              }
-            },
-            child: update ? const Text('Update') : const Text('Save'),
-          ),
-        ],
-      );
-    },
-  );
+                  ),
+                  onChanged: (value) => name = value,
+                ),
+                const SizedBox(height: 32.0),
+                TextField(
+                  controller: ageController,
+                  decoration: InputDecoration(
+                    labelText: "Enter name here",
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(15.0),
+                    ),
+                  ),
+                  onChanged: (value) => age = int.tryParse(value),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text("Cancel"),
+              ),
+              TextButton(
+                onPressed: () {
+                  if (name != null && age != null) {
+                    if (isEdit) {
+                      // have existing person
+                      final newPerson = existingPerson.updated(
+                        name,
+                        age,
+                      );
+                      Navigator.of(context).pop(
+                        newPerson,
+                      );
+                    } else {
+                      // no existing person, create new one
+                      Navigator.of(context).pop(
+                        Person(
+                          name: name!,
+                          age: age!,
+                        ),
+                      );
+                    }
+                  } else {
+                    // no name, age or both
+                    Navigator.pop(context);
+                  }
+                },
+                child: Text(isEdit ? "Update" : "Create"),
+              ),
+            ],
+          ));
 }
-
-*/
