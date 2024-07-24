@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 void main() {
   runApp(
+    // providers are like global functions, provider scope will allow our
+    // flutter application to work with these providers
     const ProviderScope(
       child: MyApp(),
     ),
@@ -27,7 +29,8 @@ class MyApp extends StatelessWidget {
   }
 }
 
-final Provider<DateTime> currentDate = Provider<DateTime>(
+// providers hand a ref object that allow us to interact with providers
+final currentDate = Provider<DateTime>(
   (ref) => DateTime.now(),
 );
 
@@ -36,7 +39,7 @@ class HomePage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // watch allow to listen to the current date if there any change to rebuild
+    // watch allow to listen to the current state if there is any change to rebuild
     final date = ref.watch(currentDate);
     return Scaffold(
       appBar: AppBar(
