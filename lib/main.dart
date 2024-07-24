@@ -27,23 +27,28 @@ class App extends StatelessWidget {
   }
 }
 
+extension CapitalizeFirst on String {
+  String capitalizeFirst() {
+    final arr = split('');
+    arr[0] = arr[0].toUpperCase();
+    return arr.join('');
+  }
+}
+
 enum City {
   riyadh,
   paris,
   tokyo,
   london,
   newYork,
+  // shanghai going to add an error
   shanghai,
   sydney,
 }
 
-final cityProvider = StateProvider<City?>(
-  (ref) => null,
-);
-
 typedef WeatherEmoji = String;
 
-Future<WeatherEmoji> getCity(City? city) {
+Future<WeatherEmoji> getWeather(City? city) {
   return Future.delayed(const Duration(seconds: 1), () {
     return {
       City.riyadh: '☀️',
@@ -51,21 +56,31 @@ Future<WeatherEmoji> getCity(City? city) {
       City.tokyo: '🌦️',
       City.london: '🌧️',
       City.newYork: '🌩️',
-      City.shanghai: '☀️',
       City.sydney: '🌨️',
     }[city]!;
   });
 }
 
-const unknownWeather = "🐦";
+/*
+this provider value can't be changed
+final myProvider = Provider((_) => "Hello World!");
+*/
 
+// this provider value can be changed, and the UI will read, write to it
+final currentCityProvider = StateProvider<City?>(
+  (ref) => null,
+);
+
+const unknownWeatherEmoji = "🐦";
+
+// UI will read from this
 final weatherProvider = FutureProvider<WeatherEmoji>(
   (ref) {
-    final city = ref.watch(cityProvider);
+    final city = ref.watch(currentCityProvider);
     if (city != null) {
-      return getCity(city);
+      return getWeather(city);
     } else {
-      return unknownWeather;
+      return unknownWeatherEmoji;
     }
   },
 );
@@ -80,112 +95,6 @@ class HomePage extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('HomePage'),
         centerTitle: true,
-      ),
-      body: Column(
-        children: [
-          Expanded(
-              child: ListView.builder(
-            itemCount: City.values.length,
-            itemBuilder: (context, index) {
-              final city = City.values[index];
-              final isSelected = ref.watch(cityProvider.notifier).state == city;
-              return ListTile(
-                title: Text(city.name),
-                trailing: isSelected ? const Icon(Icons.check) : null,
-                onTap: () => ref.read(cityProvider.notifier).state = city,
-              );
-            },
-          )),
-        ],
-      ),
-    );
-  }
-}
-
-/*
-import 'package:flutter/material.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
-
-void main() {
-  runApp(
-    const ProviderScope(
-      child: MyApp(),
-    ),
-  );
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Weather',
-      darkTheme: ThemeData.dark(),
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
-      themeMode: ThemeMode.dark,
-      home: const HomePage(),
-    );
-  }
-}
-
-enum City {
-  stockholm,
-  paris,
-  tokyo,
-  // riyadh going to add an error
-  riyadh,
-}
-
-typedef WeatherEmoji = String;
-
-Future<WeatherEmoji> getWeather(City city) async {
-  return Future.delayed(
-    const Duration(seconds: 1),
-        () => {
-      City.stockholm: '❄️',
-      City.paris: '⛈️',
-      City.tokyo: '💨',
-    }[city]!,
-  );
-}
-
-/*
-this provider value can't be changed
-final myProvider = Provider((_) => "Hello World!");
-*/
-
-// this provider value can be changed, and the UI will read, write to it
-final currentCityProvider = StateProvider<City?>(
-      (ref) => null,
-);
-
-const unknownWeatherEmoji = '🤷🏻‍♂️';
-
-// UI will read from this
-final weatherProvider = FutureProvider<WeatherEmoji>(
-      (ref) {
-    final city = ref.watch(currentCityProvider);
-    if (city != null) {
-      return getWeather(city);
-    }
-    return unknownWeatherEmoji;
-  },
-);
-
-class HomePage extends ConsumerWidget {
-  const HomePage({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final currentWeather = ref.watch(weatherProvider);
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Weather'),
       ),
       body: Column(
         children: [
@@ -206,7 +115,7 @@ class HomePage extends ConsumerWidget {
                 },
                 error: (error, stackTrace) {
                   return const Text(
-                    'Error 🥲',
+                    'City Outdated 🥲',
                     style: TextStyle(
                       fontSize: 28.0,
                     ),
@@ -216,26 +125,22 @@ class HomePage extends ConsumerWidget {
             ),
           ),
           Expanded(
-            child: ListView.builder(
-              itemCount: City.values.length,
-              itemBuilder: (context, index) {
-                final city = City.values[index];
-                final isSelected = city == ref.watch(currentCityProvider);
-                return ListTile(
-                  onTap: () =>
-                  ref.read(currentCityProvider.notifier).state = city,
-                  title: Text(
-                    city.toString(),
-                  ),
-                  trailing: isSelected ? const Icon(Icons.check) : null,
-                );
-              },
-            ),
-          )
+              child: ListView.builder(
+            itemCount: City.values.length,
+            itemBuilder: (context, index) {
+              final city = City.values[index];
+              final isSelected =
+                  ref.watch(currentCityProvider.notifier).state == city;
+              return ListTile(
+                title: Text(city.name.capitalizeFirst()),
+                trailing: isSelected ? const Icon(Icons.check) : null,
+                onTap: () =>
+                    ref.read(currentCityProvider.notifier).state = city,
+              );
+            },
+          )),
         ],
       ),
     );
   }
 }
-
-*/
