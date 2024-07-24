@@ -93,7 +93,7 @@ class HomePage extends ConsumerWidget {
     final currentWeather = ref.watch(weatherProvider);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('HomePage'),
+        title: const Text('Future Provider'),
         centerTitle: true,
       ),
       body: Column(
