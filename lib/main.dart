@@ -9,13 +9,25 @@ void main() {
   );
 }
 
-extension OptionalInfixAddition<T extends num> on T? {
+// this extension if for the operator + while it infix between one of the
+// nullable values, because our application will start with null as a default value
+extension OptionalInfixAdditionAndSubtract<T extends num> on T? {
   T? operator +(T? other) {
     final shadow = this;
     if (shadow != null) {
       return shadow + (other ?? 0) as T;
+    } else {
+      return null;
     }
-    return null;
+  }
+
+  T? operator -(T? other) {
+    final shadow = this;
+    if (shadow != null) {
+      return shadow - (other ?? 0) as T;
+    } else {
+      return null;
+    }
   }
 }
 
@@ -23,6 +35,8 @@ class Counter extends StateNotifier<int?> {
   Counter() : super(null);
 
   void increment() => state = state == null ? 1 : state + 1;
+
+  void decrement() => state = state == null ? null : state - 1;
 
   void reset() => state = null;
 }
@@ -58,6 +72,7 @@ class HomePage extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
+        // wrapping our title with a consumer to avoid rebuild the whole scaffold
         title: Consumer(
           builder: (context, ref, child) {
             final count = ref.watch(counterProvider);
@@ -74,6 +89,12 @@ class HomePage extends ConsumerWidget {
             onPressed: ref.read(counterProvider.notifier).increment,
             child: const Text(
               'Increment Button',
+            ),
+          ),
+          TextButton(
+            onPressed: ref.read(counterProvider.notifier).decrement,
+            child: const Text(
+              'Decrement Button',
             ),
           ),
           TextButton(
