@@ -1,7 +1,4 @@
 import 'dart:collection';
-import 'dart:ui';
-
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:uuid/uuid.dart';
@@ -32,7 +29,7 @@ class App extends StatelessWidget {
   }
 }
 
-// search for immutable
+// class marked as immutable means all of it's properties should be final
 @immutable
 class Person {
   final String name;
